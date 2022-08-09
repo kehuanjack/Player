@@ -1,2 +1,2 @@
 # Player
-Player音乐播放器
+音乐播放器
