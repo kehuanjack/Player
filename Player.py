@@ -65,17 +65,17 @@ def get_url(song_id):
     if 'http' not in t.text:
         mex.showinfo("提示","无链接，换首歌试试")
     else:
-        e = list(re.findall(r'(http.*?(.mp3|.m4a|.aac|.wav))',t.text)[0])[0].replace('\\','')
-        gs(e)
-        return e
+        song_url = list(re.findall(r'(http.*?(.mp3|.m4a|.aac|.wav))',t.text)[0])[0].replace('\\','')
+        gs(song_url)
+        return song_url
 
 # 链接格式判断
-def gs(url): 
+def gs(song_url): 
     global music_gs
-    if 'mp3' in url:music_gs = 'mp3'
-    if 'm4a' in url:music_gs = 'm4a'       
-    if 'aac' in url:music_gs = 'aac'
-    if 'wav' in url:music_gs = 'wav'
+    if 'mp3' in song_url:music_gs = 'mp3'
+    if 'm4a' in song_url:music_gs = 'm4a'       
+    if 'aac' in song_url:music_gs = 'aac'
+    if 'wav' in song_url:music_gs = 'wav'
 
 # 打印音乐列表事件，'ev=None'与绑定回车键有关,不可省略掉
 def show(ev=None):  
@@ -86,11 +86,11 @@ def show(ev=None):
         music_dir()
         name_num = str(e3.get())
         e2.delete(0.0, END)
-        e2.insert(END, '   歌曲\t\t\t\t  歌手\t\t  专辑\n')
+        e2.insert(END, '\t  歌曲\t\t\t\t 歌手\t\t\t 专辑\n')
         my_data = music1(name=str(e1.get()),pages=name_num)
         long = len(my_data[0])
         for i in range(0,long):
-            my_music_list = '%d  ' %(i+1) + my_data[1][i] + '\t\t\t\t ' + my_data[2][i] + '\t\t  ' + my_data[3][i] + '\n'
+            my_music_list = '%d'%(i+1) + '\t' + my_data[1][i] + '\t\t\t\t' + my_data[2][i] + '\t\t\t' + my_data[3][i] + '\n'
             e2.insert(END, my_music_list)
     except:
         mex.showinfo("提示","无填写页数")
@@ -105,18 +105,18 @@ def my_slist():
         v2.set('netease')
         name_num = str(e3.get())
         e2.delete(0.0, END)
-        e2.insert(END, '   歌曲\t\t\t\t  歌手\t\t  专辑\n')
+        e2.insert(END, '\t  歌曲\t\t\t\t 歌手\t\t\t 专辑\n')
         my_data = playlist()
         long = len(my_data[0])
         for i in range(0,long):
-            my_music_list = '%d  ' %(i+1) + my_data[1][i] + '\t\t\t\t ' + my_data[2][i] + '\t\t  ' + my_data[3][i] + '\n'
+            my_music_list = '%d'%(i+1) + '\t' + my_data[1][i] + '\t\t\t\t' + my_data[2][i] + '\t\t\t' + my_data[3][i] + '\n'
             e2.insert(END, my_music_list)
     except:
         mex.showinfo("提示","请检查歌单id")
 
 
 # 解析url
-def jx(): 
+def analyze_url(): 
     global music_url
     global response
     global name_num
@@ -127,54 +127,44 @@ def jx():
         name_num = str(e3.get())
         music_url = get_url(my_data[0][int(name_num)-1])
         if music_url != None:
-            response = requests.get(music_url).content  # 将音乐链接转换成二进制流
             path = r'{}\{}_{}.{}'.format(save_dir,my_data[1][int(name_num)-1],my_data[0][int(name_num)-1],music_gs)  # 音乐保存路径
+            if not os.path.exists(path):
+                response = requests.get(music_url).content  # 将音乐链接转换成二进制流
+                with open(path, 'wb') as f:
+                    f.write(response)
+                    f.flush()
+                gs_change()
     except:
+        music_url = None
         mex.showinfo("提示","无链接或无填写歌序")
     
 # 下载并播放事件
-def show1(): 
+def download_play(): 
     global flag
-    jx()
-    
-    try:
-        if music_url != None:
-            pygame.mixer.init()
-            pygame.mixer.music.unload()
-            xz()
-            gs_change()
+    analyze_url()
+    if music_url != None and music_gs == "mp3":
+        pygame.mixer.init()
+        pygame.mixer.music.unload()
+        songload()
+        play()
+        mex.showinfo("提示",r"正在播放：{}_{}".format(my_data[1][int(name_num)-1],my_data[0][int(name_num)-1]))
+        flag = True
+
+
+# 下一首播放事件
+def next_play():  
+    global flag
+    analyze_url()
+    if music_url != None and music_gs == "mp3":
+        if flag == False:
             songload()
             play()
             mex.showinfo("提示",r"正在播放：{}_{}".format(my_data[1][int(name_num)-1],my_data[0][int(name_num)-1]))
             flag = True
-    except:
-        mex.showinfo("提示","无链接")
+        else:
+            pygame.mixer.music.queue(path)
+            mex.showinfo("提示",r"下首将播放：{}_{}".format(my_data[1][int(name_num)-1],my_data[0][int(name_num)-1]))
 
-# 下一首播放事件
-def xs():  
-    global flag
-    jx()
-    
-    try:
-        if music_url != None:
-            xz()
-            gs_change()
-            if flag == False:
-                songload()
-                play()
-                flag = True
-            else:
-                pygame.mixer.music.queue(path)
-                mex.showinfo("提示",r"下首将播放：{}_{}".format(my_data[1][int(name_num)-1],my_data[0][int(name_num)-1]))
-    except:
-        mex.showinfo("提示","正在播放该歌曲")
-        
-
-# 下载事件
-def xz(): 
-    with open(path, 'wb') as f:
-        f.write(response)
-        f.flush()
 
 # 载入歌曲事件        
 def songload(): 
@@ -195,28 +185,32 @@ def gs_change():
         oup = path.replace(music_gs,'mp3')
         try:
             os.popen(r'ffmpeg -i {} -acodec libmp3lame {}'.format(inp,oup)).read()
+            a = True
+        except:
+            a = False
+            mex.showinfo("提示","没有安装配置ffmpeg")
+            
+        if a == True:
             os.remove(path)
             path = path.replace(music_gs,'mp3')
-        except:
-            mex.showinfo("提示","没有安装配置ffmpeg")
 
 # 复制链接事件
-def lj(): 
+def copy_url(): 
     try:
         pyperclip.copy(music_url)
     except:
         mex.showinfo("提示","无链接")
 
 # 循环播放事件
-def xh():
+def cycle_play():
     try:
         num = str(e3.get())
         pygame.mixer.music.play(loops=int(num))
     except:
         mex.showinfo("提示","无链接或无填写循环次数")
 
-# 暂停/播放事件
-def zt(): 
+# 暂停播放事件
+def pause_button(): 
     global pause1
     if pause1 == 'pause':
         pause1 = 'unpause'
@@ -233,17 +227,17 @@ def play_void(v):
 # 音源切换事件
 def chose_source():
     global source
-    source=v2.get()
+    source = v2.get()
 
 # api切换事件
 def change_api():
     global api
     if api == first_api:
         api = second_api
-        mex.showinfo("提示","成功切换为second_api")
+        mex.showinfo("提示","second_api")
     elif api == second_api:
         api = first_api
-        mex.showinfo("提示","成功切换为first_api")
+        mex.showinfo("提示","first_api")
 
 # 文本操作
 def music_dir():
@@ -251,8 +245,10 @@ def music_dir():
     global text
     global count
     global playlist_id
+    
     with open(r'.\setting.txt','r',encoding='utf-8')as f:
         all_text = f.read()
+        
     text = re.findall(r":\"(.*?)\";",all_text)
     save_dir = text[0]
     count = text[1]  # 搜索的歌曲数
@@ -273,25 +269,37 @@ if __name__ == "__main__":
                 First_api:"https://fm.liuzhijin.cn/api.php?";
                 Second_api:"https://api.zhuolin.wang/api.php?";
                 Playlist_id:"3778678";
+                background:"#CA0316";
+                foreground:"white";
+                activebackground:"red";
+                activeforeground:"white";
                 '''
     
     # 判断文件并创建
     if not os.path.exists(r'.\setting.txt'):
         with open(r'.\setting.txt','w',encoding='utf-8')as f:
             f.write(first_txt)
-    music_dir()
-    first_api = text[3]
-    second_api = text[4]
-    api = first_api
-    source = text[2]
+
+    try:      
+        music_dir()
+        first_api = text[3]
+        second_api = text[4]
+        api = first_api
+        source = text[2]
+        bg = text[6]
+        fg = text[7]
+        abg = text[8]
+        afg = text[9] 
+    except:
+        exit(1)
+    
     source_data = [(1,'kugou','酷狗'),(2,'kuwo','酷我'),(3,'qq','QQ'),
 
                    (4,'netease','网易云')]
     flag = False
     music_url = None
-    value=0.50 # 音量初始值
+    value = 0.50 # 音量初始值
     pause1 = 'unpause'  # 暂停播放初值标记
-
     pygame.mixer.init()
 
     # 设计窗口与组件事件
@@ -307,10 +315,10 @@ if __name__ == "__main__":
     e1.grid(row=1, column=1)
     e1.bind("<Return>",show)  # 将输入框与回车键绑定
     
-    B1 = Button(app, text="搜索", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=show)
+    B1 = Button(app, text="搜索", background=bg, foreground=fg, activebackground=abg, activeforeground=afg, width=10, command=show)
     B1.grid(row=1, column=2, padx=5)
     
-    B4 = Button(app, text="复制链接", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=lj)
+    B4 = Button(app, text="复制链接", background=bg, foreground=fg, activebackground=abg, activeforeground=afg, width=10, command=copy_url)
     B4.grid(row=1, column=3, padx=5)
 
     # 音量条
@@ -339,88 +347,22 @@ if __name__ == "__main__":
     e3.grid(row=3, column=1)
     e3.insert(END,'1')
     
-    B5 = Button(app, text="下载并播放", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=show1)
+    B5 = Button(app, text="下载播放", background=bg, foreground=fg, activebackground=abg, activeforeground=afg, width=10, command=download_play)
     B5.grid(row=3, column=2)
     
-    B6 = Button(app, text="循环播放", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=xh)
+    B6 = Button(app, text="循环播放", background=bg, foreground=fg, activebackground=abg, activeforeground=afg, width=10, command=cycle_play)
     B6.grid(row=3, column=3)
     
-    B7 = Button(app, text="下一首播放", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=xs)
+    B7 = Button(app, text="下首播放", background=bg, foreground=fg, activebackground=abg, activeforeground=afg, width=10, command=next_play)
     B7.grid(row=3, column=4)
     
-    B8 = Button(app, text="暂停/播放", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=zt)
+    B8 = Button(app, text="暂停播放", background=bg, foreground=fg, activebackground=abg, activeforeground=afg, width=10, command=pause_button)
     B8.grid(row=3, column=5)
 
-    B9 = Button(app, text="切换API", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=change_api)
+    B9 = Button(app, text="切换API", background=bg, foreground=fg, activebackground=abg, activeforeground=afg, width=10, command=change_api)
     B9.grid(row=3, column=6, padx=10)
 
-    B10 = Button(app, text="我的歌单", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=my_slist)
+    B10 = Button(app, text="我的歌单", background=bg, foreground=fg, activebackground=abg, activeforeground=afg, width=10, command=my_slist)
     B10.grid(row=3, column=7)
 
     mainloop()
-
-
-
-
-'''
-待完成：
-1.pydub 音频格式转换 aac -> MP3  文件操作 （已解决）
-https://blog.csdn.net/qq_45404396/article/details/117397212
-https://blog.csdn.net/weixin_42725107/article/details/90710329
-
-2.语音识别，转文本
-https://blog.csdn.net/weixin_46089319/article/details/107860605
-
-3.tk组件学习：列表点击事件，下拉菜单，搜索资源可选，窗口组件布局
-https://www.bilibili.com/video/BV1jW411Y7dL?p=5&spm_id_from=pageDriver
-
-4.解决同名文件播放不了的问题：判断是否有歌曲播放，传递变量，如果有则清除文件数据 （已解决）
-
-'''
-''' 最初的UI框架：
-
-    app = Tk()
-    app.geometry('900x280') # 窗口大小
-    app.title('音乐播放器')
-    app.resizable(True,True) # 禁止窗口拉伸
-    
-    Label(app, text="请输入歌名或者歌手名：").grid(row=1, column=0)
-    
-    theButton1 = Button(app, text="搜索", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=show)
-    theButton1.grid(row=1, column=4, sticky=W + E, padx=10, pady=5)
-    
-    theButton2 = Button(app, text="音量+", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=play_void1)
-    theButton2.grid(row=1, column=5, sticky=W + E, padx=10, pady=5)
-    
-    theButton3 = Button(app, text="音量-", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=play_void2)
-    theButton3.grid(row=1, column=6, sticky=W + E, padx=10, pady=5)
-    
-    theButton8 = Button(app, text="打印链接", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=lj)
-    theButton8.grid(row=1, column=7, sticky=W + E, padx=10, pady=5)
-    
-    v1 = StringVar()
-    e1 = Entry(app, textvariable=v1)
-    e2 = Text(app, font=('华文新魏', 11))
-    e1.grid(row=1, column=1)
-    e1.bind("<Return>",show)
-    e2.place(relx=0.03, rely=0.14, relwidth=0.938, relheight=0.5, )
-    Label(app, text="   页数/依序播歌/播放次数：").grid(row=6, column=0)
-    
-    theButton4 = Button(app, text="下载并播放", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=show1)
-    theButton4.grid(row=6, column=4, sticky=W + E, padx=10, pady=145)
-    
-    theButton5 = Button(app, text="循环播放", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=xh)
-    theButton5.grid(row=6, column=5, sticky=W + E, padx=10, pady=145)
-    
-    theButton6 = Button(app, text="下一首播放", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=xs)
-    theButton6.grid(row=6, column=6, sticky=W + E, padx=10, pady=145)
-    
-    theButton7 = Button(app, text="暂停/播放", background='#CA0316', foreground='white', activebackground='red', activeforeground='white', width=10, command=zt)
-    theButton7.grid(row=6, column=7, sticky=W + E, padx=10, pady=145)
-
-    v3 = StringVar()
-    e3 = Entry(app, textvariable=v3)
-    e3.grid(row=6, column=1)
-    e3.insert(END,'1')
-
-'''
