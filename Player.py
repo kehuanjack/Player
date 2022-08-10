@@ -262,7 +262,8 @@ if __name__ == "__main__":
     global pause1
     global flag
 
-    first_txt = '''参数设置：
+    first_txt = '''
+            参数设置：（By:科幻木影）
                 Save_dir:".\music";
                 Count:"50";
                 First_source:"qq";
@@ -273,6 +274,8 @@ if __name__ == "__main__":
                 foreground:"white";
                 activebackground:"red";
                 activeforeground:"white";
+                title:"音乐播放器";
+                
                 '''
     
     # 判断文件并创建
@@ -289,7 +292,8 @@ if __name__ == "__main__":
         bg = text[6]
         fg = text[7]
         abg = text[8]
-        afg = text[9] 
+        afg = text[9]
+        title = text[10]
     except:
         exit(1)
     
@@ -305,7 +309,7 @@ if __name__ == "__main__":
     # 设计窗口与组件事件
     app = Tk()
     app.geometry('900x260')  # 窗口大小
-    app.title('音乐播放器')
+    app.title(title)
     app.resizable(False,False)  # 禁止窗口拉伸
     
     Label(app, text="请输入歌名/歌手：").grid(row=1, column=0)
@@ -366,3 +370,4 @@ if __name__ == "__main__":
     B10.grid(row=3, column=7)
 
     mainloop()
+
