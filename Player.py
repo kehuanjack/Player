@@ -295,7 +295,7 @@ if __name__ == "__main__":
         afg = text[9]
         title = text[10]
     except:
-        exit(1)
+        os._exit(0)
     
     source_data = [(1,'kugou','酷狗'),(2,'kuwo','酷我'),(3,'qq','QQ'),
 
