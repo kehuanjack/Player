@@ -140,57 +140,44 @@ def analyze_url():
     
 # 下载并播放事件
 def download_play(): 
-    global flag
     analyze_url()
     if music_url != None and music_gs == "mp3":
-        pygame.mixer.init()
         pygame.mixer.music.unload()
-        songload()
         play()
         mex.showinfo("提示",r"正在播放：{}_{}".format(my_data[1][int(name_num)-1],my_data[0][int(name_num)-1]))
-        flag = True
 
 
 # 下一首播放事件
 def next_play():  
-    global flag
     analyze_url()
     if music_url != None and music_gs == "mp3":
-        if flag == False:
-            songload()
+        if not pygame.mixer.music.get_busy():
             play()
             mex.showinfo("提示",r"正在播放：{}_{}".format(my_data[1][int(name_num)-1],my_data[0][int(name_num)-1]))
-            flag = True
         else:
             pygame.mixer.music.queue(path)
             mex.showinfo("提示",r"下首将播放：{}_{}".format(my_data[1][int(name_num)-1],my_data[0][int(name_num)-1]))
 
-
-# 载入歌曲事件        
-def songload(): 
-    pygame.mixer.init()
-    pygame.mixer.music.load(path)   
-
 # 播放事件
-def play(): 
+def play():
+    pygame.mixer.music.load(path)
     pygame.mixer.music.play()
     pygame.mixer.music.set_volume(value)
 
 # 音乐格式转换 -> mp3 
 def gs_change(): 
     global path
-    global music_gs
     if music_gs != 'mp3':
         inp = path
         oup = path.replace(music_gs,'mp3')
         try:
             os.popen(r'ffmpeg -i {} -acodec libmp3lame {}'.format(inp,oup)).read()
-            a = True
+            flag = True
         except:
-            a = False
+            flag = False
             mex.showinfo("提示","没有安装配置ffmpeg")
             
-        if a == True:
+        if flag == True:
             os.remove(path)
             path = path.replace(music_gs,'mp3')
 
@@ -253,15 +240,12 @@ def music_dir():
     save_dir = text[0]
     count = text[1]  # 搜索的歌曲数
     playlist_id = text[5]
+    
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
 if __name__ == "__main__":
-    # 设置初值
-    global value
-    global pause1
-    global flag
-
+    
     first_txt = '''
             参数设置：（By:科幻木影）
                 Save_dir:".\music";
@@ -300,10 +284,11 @@ if __name__ == "__main__":
     source_data = [(1,'kugou','酷狗'),(2,'kuwo','酷我'),(3,'qq','QQ'),
 
                    (4,'netease','网易云')]
-    flag = False
+
     music_url = None
     value = 0.50 # 音量初始值
     pause1 = 'unpause'  # 暂停播放初值标记
+
     pygame.mixer.init()
 
     # 设计窗口与组件事件
